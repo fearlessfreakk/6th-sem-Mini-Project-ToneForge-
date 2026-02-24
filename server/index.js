@@ -38,63 +38,82 @@ app.post('/api/convert', protect, async (req, res) => {
     // Mock Mode: If input contains "MOCK_TEST", return a dummy response
     if (inputEmail.toUpperCase().includes('MOCK_TEST')) {
       const mockResponses = {
-        business: "Subject: Follow-up on Project Timeline\n\nDear Alex,\n\nI hope this email finds you well. I am writing to provide a quick update regarding our project timeline for the upcoming weekend. Please let me know if you have any questions.\n\nBest regards,\nJamie",
-        academic: "Abstract: Analysis of Weekend Communication Patterns\n\nThis paper examines the efficacy of informal scheduling versus structured academic follow-ups. Preliminary results suggest that 'MOCK_TEST' inputs yield significantly more professional outputs when processed through ToneForgeAI.",
-        corporate: "INTERNAL MEMO\nTO: Alex\nFROM: Jamie\nRE: QUARTERLY HIKE OPERATIONS\n\nPlease be advised that the hiking operations scheduled for Saturday are currently under review. We aim to optimize all recreational synergies to ensure maximum team alignment.\n\nRegards,\nManagement"
+        business: {
+          subject: "Follow-up: Project Timeline Update",
+          sender: "Jamie Smith",
+          to: "Alex Mercer",
+          body: "Dear Alex,\n\nI hope this email finds you well. I am writing to provide a quick update regarding our project timeline for the upcoming weekend. Please let me know if you have any questions.\n\nSincerely,\nJamie Smith"
+        },
+        academic: {
+          subject: "Research Inquiry: Weekend Communication Patterns",
+          sender: "Jamie Smith",
+          to: "Professor Mercer",
+          body: "Dear Professor Mercer,\n\nI hope you are having a productive week. Regarding my research into weekend communication patterns, I have completed the preliminary 'MOCK_TEST' inputs. I would appreciate your feedback on the structured outputs.\n\nBest regards,\nJamie Smith\nUniversity of ToneForge"
+        },
+        corporate: {
+          subject: "Update: Regional Hiking Operations",
+          sender: "Jamie Smith",
+          to: "Management Team",
+          body: "Hello Team,\n\nPlease be advised that the hiking operations scheduled for Saturday are currently under review. We aim to optimize all recreational synergies to ensure maximum team alignment. Further updates will be provided by EOD.\n\nKind regards,\nJamie Smith\nOperations Lead\nToneForgeAI"
+        }
       };
 
-      const formal_text = mockResponses[inputCategory] || mockResponses.business;
+      const mockData = mockResponses[inputCategory] || mockResponses.business;
 
       try {
         await History.create({
           userId: req.user.id,
           originalText: inputEmail,
-          formalizedText: formal_text,
-          subject: subject || "Mock Response",
-          sender: sender || "ToneForgeAI",
-          recipient: recipient || "User",
+          formalizedText: mockData.body,
+          subject: mockData.subject,
+          sender: mockData.sender,
+          recipient: mockData.to,
           tone: inputCategory,
           category: inputCategory,
         });
-        return res.json({ formal_text });
+        return res.json({
+          category: inputCategory,
+          email: mockData,
+          formal_text: mockData.body // Maintain backward compatibility
+        });
       } catch (error) {
         console.error("Mock History Error:", error);
         return res.status(500).json({ message: "Error saving mock history" });
       }
     }
 
-    // Construct a rich prompt for the AI
-    const promptContext = `
-Task: Rewrite the following email body to be ${inputCategory}.
-Subject: ${subject || 'No Subject'}
-From: ${sender || 'Unknown'}
-To: ${recipient || 'Unknown'}
+    // Forward to FastAPI (Teammate's new structure)
+    // Endpoint: http://localhost:8000/formalize_email
+    // Body: { "raw_email": "...", "category": "..." }
+    const response = await axios.post('http://localhost:8000/formalize_email', {
+      raw_email: inputEmail,
+      category: inputCategory
+    });
 
-Body to Rewrite:
-${inputEmail}
-    `.trim();
-
-    // Forward to FastAPI
-    // Note: If FastAPI supports structured input, we should update it.
-    // For now, we send the promptContext as "text" or just the body if we want to keep it simple.
-    // Let's send the promptContext so the AI sees the full picture.
-    const response = await axios.post('http://localhost:8000/generate-formal', { text: promptContext });
+    // teammate's API returns: { "category": "...", "email": { "subject": "...", "body": "...", ... } }
+    const aiResult = response.data;
+    const structuredEmail = aiResult.email;
 
     // Save to History
-    if (response.data && response.data.formal_text) {
+    if (structuredEmail && structuredEmail.body) {
       await History.create({
         userId: req.user.id,
         originalText: inputEmail,
-        formalizedText: response.data.formal_text,
-        subject,
-        sender,
-        recipient,
+        formalizedText: structuredEmail.body,
+        subject: structuredEmail.subject || subject,
+        sender: structuredEmail.sender || sender,
+        recipient: structuredEmail.to || recipient,
         tone: inputCategory,
         category: inputCategory,
       });
     }
 
-    res.json(response.data);
+    // Send response back to frontend
+    // We include formal_text for backward compatibility with the existing UI
+    res.json({
+      ...aiResult,
+      formal_text: structuredEmail.body
+    });
   } catch (error) {
     console.error('Proxy Error:', error.message);
     if (error.code === 'ECONNREFUSED') {

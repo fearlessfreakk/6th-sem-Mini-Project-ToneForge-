@@ -1,7 +1,30 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from './context/AuthContext';
 import { Link } from 'react-router-dom';
-import { Sparkles, MessageSquare, Copy, Check, ArrowLeft, Mail } from 'lucide-react';
+import { Sparkles, MessageSquare, Copy, Check, ArrowLeft, Mail, Send, Wand2, GraduationCap, Building2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const ToneCard = ({ id, label, icon: Icon, active, onClick }) => (
+    <button
+        onClick={() => onClick(id)}
+        className={`relative flex flex-col items-center gap-3 p-4 rounded-2xl transition-all duration-300 border ${active
+            ? 'bg-indigo-600 border-indigo-500 shadow-lg shadow-indigo-500/20 text-white scale-[1.05] z-10'
+            : 'bg-white/50 dark:bg-gray-800/50 border-white/20 dark:border-gray-700/30 text-gray-500 dark:text-gray-400 hover:bg-white dark:hover:bg-gray-800 hover:border-indigo-500/30'
+            }`}
+    >
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${active ? 'bg-white/20' : 'bg-gray-100 dark:bg-gray-700'}`}>
+            <Icon size={20} />
+        </div>
+        <span className="text-xs font-bold uppercase tracking-widest">{label}</span>
+        {active && (
+            <motion.div
+                layoutId="activeTone"
+                className="absolute inset-0 border-2 border-indigo-400 rounded-2xl pointer-events-none"
+                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+            />
+        )}
+    </button>
+);
 
 const EditorPage = () => {
     const [formData, setFormData] = useState({
@@ -9,7 +32,7 @@ const EditorPage = () => {
         recipient: '',
         sender: '',
         raw_email: '',
-        category: 'business' // Default category
+        category: 'business'
     });
     const [outputText, setOutputText] = useState('');
     const [loading, setLoading] = useState(false);
@@ -62,7 +85,9 @@ const EditorPage = () => {
                 throw new Error(data.error || 'Failed to convert text');
             }
 
-            setOutputText(data.formal_text || data.converted_text || JSON.stringify(data));
+            // Extract the refined text, checking for both the new structured format and the legacy field
+            const refinedText = data.email?.body || data.formal_text || data.converted_text;
+            setOutputText(refinedText || JSON.stringify(data));
 
         } catch (err) {
             setError(err.message);
@@ -79,167 +104,166 @@ const EditorPage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
-            <div className="max-w-5xl mx-auto">
-                <Link
-                    to="/"
-                    className="mb-6 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition flex items-center gap-2 inline-block font-medium"
-                >
-                    <ArrowLeft size={18} /> Back to Home
-                </Link>
+        <div className="min-h-screen bg-white dark:bg-gray-950 pt-32 pb-20 px-4 sm:px-6 lg:px-8 transition-colors duration-300 relative overflow-hidden">
+            {/* Background Decorations */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+                <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-500/5 rounded-full blur-[120px]"></div>
+                <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-500/5 rounded-full blur-[120px]"></div>
+            </div>
 
-                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden border border-gray-100 dark:border-gray-700">
-                    <div className="p-6 md:p-8 space-y-6">
-                        {/* Header Inputs */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Subject</label>
-                                <input
-                                    type="text"
-                                    name="subject"
-                                    value={formData.subject}
-                                    onChange={handleChange}
-                                    placeholder="quick question about the weekend!!"
-                                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-gray-900 dark:text-gray-100 placeholder-gray-400"
-                                />
+            <div className="max-w-4xl mx-auto">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="glass rounded-[2.5rem] shadow-2xl overflow-hidden border-indigo-500/10"
+                >
+                    <div className="p-8 md:p-12 space-y-10">
+                        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-indigo-500/10">
+                            <div>
+                                <h1 className="text-4xl font-black text-gray-900 dark:text-white tracking-tighter mb-2 font-display">Forge Excellence</h1>
+                                <p className="text-gray-500 dark:text-gray-400 font-medium">Draft your message and let the forge refine it.</p>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="flex gap-3">
+                                <ToneCard id="business" label="Business" icon={Mail} active={formData.category === 'business'} onClick={toggleCategory} />
+                                <ToneCard id="academic" label="Academic" icon={GraduationCap} active={formData.category === 'academic'} onClick={toggleCategory} />
+                                <ToneCard id="corporate" label="Corporate" icon={Building2} active={formData.category === 'corporate'} onClick={toggleCategory} />
+                            </div>
+                        </div>
+
+                        {/* Form Inputs */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="md:col-span-1 space-y-6">
                                 <div className="space-y-2">
-                                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Recipient</label>
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Subject</label>
+                                    <input
+                                        type="text"
+                                        name="subject"
+                                        value={formData.subject}
+                                        onChange={handleChange}
+                                        placeholder="Quick update..."
+                                        className="w-full px-5 py-4 bg-gray-50/50 dark:bg-gray-900/50 border border-indigo-500/5 dark:border-indigo-500/10 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-gray-900 dark:text-gray-100 font-medium placeholder-gray-400"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Recipient</label>
                                     <input
                                         type="text"
                                         name="recipient"
                                         value={formData.recipient}
                                         onChange={handleChange}
-                                        placeholder="Alex"
-                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-gray-900 dark:text-gray-100 placeholder-gray-400"
+                                        placeholder="Alex Mercer"
+                                        className="w-full px-5 py-4 bg-gray-50/50 dark:bg-gray-900/50 border border-indigo-500/5 dark:border-indigo-500/10 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-gray-900 dark:text-gray-100 font-medium placeholder-gray-400"
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sender</label>
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Sender</label>
                                     <input
                                         type="text"
                                         name="sender"
                                         value={formData.sender}
                                         onChange={handleChange}
-                                        placeholder="Jamie"
-                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-gray-900 dark:text-gray-100 placeholder-gray-400"
+                                        placeholder="Your Name"
+                                        className="w-full px-5 py-4 bg-gray-50/50 dark:bg-gray-900/50 border border-indigo-500/5 dark:border-indigo-500/10 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-gray-900 dark:text-gray-100 font-medium placeholder-gray-400"
                                     />
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Email Body Input */}
-                        <div className="space-y-2">
-                            <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Email Body</label>
-                            <textarea
-                                ref={textareaRef}
-                                name="raw_email"
-                                value={formData.raw_email}
-                                onChange={(e) => {
-                                    handleChange(e);
-                                    adjustHeight();
-                                }}
-                                placeholder="Hey Alex! Hope you're doing good. I was just wondering if we're still on for that hike on Saturday?..."
-                                className="w-full min-h-[160px] px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none resize-none transition-all duration-200 text-gray-900 dark:text-gray-100 placeholder-gray-400 shadow-inner"
-                            />
-                            <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 italic">
-                                💡 Tip: Type <span className="font-mono font-bold text-indigo-500">MOCK_TEST</span> to receive a dummy response for verification.
-                            </p>
-                        </div>
-
-                        {/* Transformation Mode */}
-                        <div className="space-y-2">
-                            <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Email Tone (Category)</label>
-                            <div className="flex bg-gray-100 dark:bg-gray-900 p-1 rounded-xl border border-gray-200 dark:border-gray-700">
-                                {['business', 'academic', 'corporate'].map((cat) => (
-                                    <button
-                                        key={cat}
-                                        onClick={() => toggleCategory(cat)}
-                                        className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 flex items-center justify-center gap-2 capitalize ${formData.category === cat
-                                            ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg scale-[1.02]' // Active state
-                                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-white/5'
-                                            }`}
-                                    >
-                                        {cat === 'business' && <Mail size={16} />}
-                                        {cat === 'academic' && <Sparkles size={16} />}
-                                        {cat === 'corporate' && <MessageSquare size={16} />}
-                                        {cat}
-                                    </button>
-                                ))}
+                            <div className="md:col-span-2 space-y-2">
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Draft Content</label>
+                                <textarea
+                                    ref={textareaRef}
+                                    name="raw_email"
+                                    value={formData.raw_email}
+                                    onChange={(e) => {
+                                        handleChange(e);
+                                        adjustHeight();
+                                    }}
+                                    placeholder="Hey Alex, hope you're good. Can you check that report? Thanks!"
+                                    className="w-full min-h-[280px] px-6 py-6 bg-gray-50/50 dark:bg-gray-900/50 border border-indigo-500/5 dark:border-indigo-500/10 rounded-[2rem] focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none resize-none transition-all duration-300 text-gray-900 dark:text-gray-100 font-medium placeholder-gray-400 shadow-inner"
+                                />
                             </div>
                         </div>
 
-                        <button
-                            onClick={handleConvert}
-                            disabled={loading || !formData.raw_email.trim()}
-                            className="w-full py-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 hover:from-indigo-700 hover:via-purple-700 hover:to-indigo-800 text-white font-bold rounded-xl shadow-lg hover:shadow-indigo-500/25 transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                        >
-                            {loading ? (
-                                <span className="flex items-center justify-center gap-3">
-                                    <div className="w-5 h-5 border-[3px] border-white/30 border-t-white rounded-full animate-spin" />
-                                    Forging your perfect email...
-                                </span>
-                            ) : (
-                                <span className="flex items-center justify-center gap-2">
-                                    Forge Email <Sparkles size={18} />
-                                </span>
-                            )}
-                        </button>
+                        <div className="flex flex-col md:flex-row items-center gap-6">
+                            <button
+                                onClick={handleConvert}
+                                disabled={loading || !formData.raw_email.trim()}
+                                className="w-full md:flex-1 py-5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-500/20 transition-all duration-300 flex items-center justify-center gap-3 text-lg disabled:opacity-50 disabled:cursor-not-allowed group"
+                            >
+                                {loading ? (
+                                    <>
+                                        <div className="w-6 h-6 border-[3px] border-white/30 border-t-white rounded-full animate-spin" />
+                                        <span>Forging Brilliance...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span>Forge Formalization</span>
+                                        <Sparkles size={20} className="group-hover:rotate-12 transition-transform" />
+                                    </>
+                                )}
+                            </button>
+                            <div className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-100 dark:bg-gray-900 px-4 py-3 rounded-xl border border-indigo-500/5">
+                                <Wand2 size={14} className="text-indigo-500" />
+                                Model: Forge-V1 Elite
+                            </div>
+                        </div>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* Output Section */}
-                {(outputText || error) && (
-                    <div className="mt-8 animate-fade-in-up">
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                <Mail className="text-indigo-500" /> Transformed Email
-                            </h2>
-                            {outputText && !error && (
-                                <div className="bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
-                                    <Sparkles size={12} /> Generated Successfully
-                                </div>
-                            )}
-                        </div>
-
-                        <div className={`relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl border ${error ? 'border-red-200 dark:border-red-900' : 'border-gray-100 dark:border-gray-700'} overflow-hidden`}>
-                            {error ? (
-                                <div className="p-8 text-center text-red-500 dark:text-red-400">
-                                    <p className="font-semibold">Transformation Failed</p>
-                                    <p className="text-sm mt-1">{error}</p>
-                                </div>
-                            ) : (
-                                <>
-                                    <div className="bg-gray-50 dark:bg-gray-900/50 px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                                        <div className="flex gap-2">
-                                            <div className="w-3 h-3 rounded-full bg-red-400" />
-                                            <div className="w-3 h-3 rounded-full bg-yellow-400" />
-                                            <div className="w-3 h-3 rounded-full bg-green-400" />
-                                        </div>
-                                        <button
-                                            onClick={handleCopy}
-                                            className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg text-xs font-medium text-gray-600 dark:text-gray-300 transition-colors"
-                                        >
-                                            {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
-                                            {copied ? 'Copied' : 'Copy'}
-                                        </button>
+                <AnimatePresence mode="wait">
+                    {(outputText || error) && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 20 }}
+                            className="mt-12 space-y-6"
+                        >
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-3 font-display tracking-tight uppercase">
+                                    <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+                                        <Check className="text-indigo-500" size={18} />
                                     </div>
-                                    <div className="p-8">
+                                    Refined Result
+                                </h2>
+                                {outputText && (
+                                    <button
+                                        onClick={handleCopy}
+                                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${copied
+                                            ? 'bg-green-500 text-white shadow-lg shadow-green-500/20'
+                                            : 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-700'
+                                            }`}
+                                    >
+                                        {copied ? <Check size={14} /> : <Copy size={14} />}
+                                        {copied ? 'Copied' : 'Copy Result'}
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className={`glass rounded-[2rem] border-2 ${error ? 'border-red-500/20 bg-red-50/50' : 'border-indigo-500/20 bg-indigo-50/10'} overflow-hidden relative group`}>
+                                {error ? (
+                                    <div className="p-10 text-center text-red-500">
+                                        <p className="font-black uppercase tracking-widest mb-2">Forge Interrupted</p>
+                                        <p className="text-sm font-medium opacity-80">{error}</p>
+                                    </div>
+                                ) : (
+                                    <div className="p-10 md:p-12 relative">
+                                        <div className="absolute top-4 right-4 text-[8px] font-black text-indigo-500/40 uppercase tracking-[0.3em]">Tone: {formData.category}</div>
                                         <div className="prose dark:prose-invert max-w-none">
-                                            <p className="whitespace-pre-wrap text-gray-800 dark:text-gray-200 leading-relaxed font-sans text-base">
+                                            <p className="whitespace-pre-wrap text-gray-900 dark:text-gray-100 leading-relaxed font-medium text-lg">
                                                 {outputText}
                                             </p>
                                         </div>
                                     </div>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                )}
+                                )}
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
         </div>
     );
 };
 
 export default EditorPage;
+
