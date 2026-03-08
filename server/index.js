@@ -82,12 +82,15 @@ app.post('/api/convert', protect, async (req, res) => {
       }
     }
 
-    // Forward to FastAPI (Teammate's new structure)
-    // Endpoint: http://localhost:8000/formalize_email
-    // Body: { "raw_email": "...", "category": "..." }
-    const response = await axios.post('http://localhost:8000/formalize_email', {
+    // Forward to AI Service
+    // Endpoint and Key from environment variables
+    const response = await axios.post(process.env.AI_API_ENDPOINT, {
       raw_email: inputEmail,
       category: inputCategory
+    }, {
+      headers: {
+        'Authorization': `Bearer ${process.env.AI_API_KEY}`
+      }
     });
 
     // teammate's API returns: { "category": "...", "email": { "subject": "...", "body": "...", ... } }
