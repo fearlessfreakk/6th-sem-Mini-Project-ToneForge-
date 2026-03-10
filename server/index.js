@@ -1,4 +1,5 @@
 const express = require('express');
+require('dotenv').config();
 const mongoose = require('mongoose');
 const cors = require('cors');
 const axios = require('axios');
@@ -7,7 +8,6 @@ const historyRoutes = require('./routes/historyRoutes');
 const userRoutes = require('./routes/userRoutes');
 const { protect } = require('./middleware/authMiddleware');
 const History = require('./models/History');
-require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -42,18 +42,21 @@ app.post('/api/convert', protect, async (req, res) => {
           subject: "Follow-up: Project Timeline Update",
           sender: "Jamie Smith",
           to: "Alex Mercer",
+          cc: null,
           body: "Dear Alex,\n\nI hope this email finds you well. I am writing to provide a quick update regarding our project timeline for the upcoming weekend. Please let me know if you have any questions.\n\nSincerely,\nJamie Smith"
         },
         academic: {
           subject: "Research Inquiry: Weekend Communication Patterns",
           sender: "Jamie Smith",
           to: "Professor Mercer",
+          cc: null,
           body: "Dear Professor Mercer,\n\nI hope you are having a productive week. Regarding my research into weekend communication patterns, I have completed the preliminary 'MOCK_TEST' inputs. I would appreciate your feedback on the structured outputs.\n\nBest regards,\nJamie Smith\nUniversity of ToneForge"
         },
         corporate: {
           subject: "Update: Regional Hiking Operations",
           sender: "Jamie Smith",
           to: "Management Team",
+          cc: null,
           body: "Hello Team,\n\nPlease be advised that the hiking operations scheduled for Saturday are currently under review. We aim to optimize all recreational synergies to ensure maximum team alignment. Further updates will be provided by EOD.\n\nKind regards,\nJamie Smith\nOperations Lead\nToneForgeAI"
         }
       };
@@ -73,8 +76,7 @@ app.post('/api/convert', protect, async (req, res) => {
         });
         return res.json({
           category: inputCategory,
-          email: mockData,
-          formal_text: mockData.body // Maintain backward compatibility
+          email: mockData
         });
       } catch (error) {
         console.error("Mock History Error:", error);
@@ -94,28 +96,35 @@ app.post('/api/convert', protect, async (req, res) => {
     });
 
     // teammate's API returns: { "category": "...", "email": { "subject": "...", "body": "...", ... } }
+    // OR it might return { "category": "...", "email": "..." } if the model is simple
     const aiResult = response.data;
-    const structuredEmail = aiResult.email;
+    const structuredEmail = (typeof aiResult.email === 'object' && aiResult.email !== null) ? aiResult.email : null;
+    const emailBody = structuredEmail?.body || (typeof aiResult.email === 'string' ? aiResult.email : aiResult.body || "");
 
     // Save to History
-    if (structuredEmail && structuredEmail.body) {
+    if (emailBody) {
       await History.create({
         userId: req.user.id,
         originalText: inputEmail,
-        formalizedText: structuredEmail.body,
-        subject: structuredEmail.subject || subject,
-        sender: structuredEmail.sender || sender,
-        recipient: structuredEmail.to || recipient,
+        formalizedText: emailBody,
+        subject: structuredEmail?.subject || subject || "",
+        sender: structuredEmail?.sender || sender || "",
+        recipient: structuredEmail?.to || structuredEmail?.recipient || recipient || "",
         tone: inputCategory,
         category: inputCategory,
       });
     }
 
-    // Send response back to frontend
-    // We include formal_text for backward compatibility with the existing UI
+    // Send response back to frontend strictly following the requested format
     res.json({
-      ...aiResult,
-      formal_text: structuredEmail.body
+      category: aiResult.category || inputCategory,
+      email: structuredEmail ? {
+        subject: structuredEmail.subject || "",
+        sender: structuredEmail.sender || "",
+        to: structuredEmail.to || structuredEmail.recipient || "",
+        cc: structuredEmail.cc || null,
+        body: structuredEmail.body || emailBody
+      } : emailBody // Fallback to raw string if not structured
     });
   } catch (error) {
     console.error('Proxy Error:', error.message);

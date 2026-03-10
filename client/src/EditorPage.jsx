@@ -28,9 +28,6 @@ const ToneCard = ({ id, label, icon: Icon, active, onClick }) => (
 
 const EditorPage = () => {
     const [formData, setFormData] = useState({
-        subject: '',
-        recipient: '',
-        sender: '',
         raw_email: '',
         category: 'business'
     });
@@ -64,6 +61,10 @@ const EditorPage = () => {
 
     const handleConvert = async () => {
         if (!formData.raw_email.trim()) return;
+        if (!user || !user.token) {
+            setError("You are not properly logged in. Please log out and log back in.");
+            return;
+        }
 
         setLoading(true);
         setError('');
@@ -76,18 +77,26 @@ const EditorPage = () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${user.token}`,
                 },
-                body: JSON.stringify(formData),
+                body: JSON.stringify({
+                    raw_email: formData.raw_email,
+                    category: formData.category
+                }),
             });
 
             const data = await response.json();
 
             if (!response.ok) {
+                // Handle unauthorized specifically
+                if (response.status === 401) {
+                    throw new Error(data.error || 'Session expired or invalid. Please log in again.');
+                }
                 throw new Error(data.error || 'Failed to convert text');
             }
 
-            // Extract the refined text, checking for both the new structured format and the legacy field
-            const refinedText = data.email?.body || data.formal_text || data.converted_text;
-            setOutputText(refinedText || JSON.stringify(data));
+            // Extract the refined text from the standardized structured format
+            // Check for nested email.body or top-level email/body
+            const refinedText = data.email?.body || data.email || data.body || "No body returned in response";
+            setOutputText(refinedText);
 
         } catch (err) {
             setError(err.message);
@@ -131,44 +140,8 @@ const EditorPage = () => {
                         </div>
 
                         {/* Form Inputs */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="md:col-span-1 space-y-6">
-                                <div className="space-y-2">
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Subject</label>
-                                    <input
-                                        type="text"
-                                        name="subject"
-                                        value={formData.subject}
-                                        onChange={handleChange}
-                                        placeholder="Quick update..."
-                                        className="w-full px-5 py-4 bg-gray-50/50 dark:bg-gray-900/50 border border-indigo-500/5 dark:border-indigo-500/10 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-gray-900 dark:text-gray-100 font-medium placeholder-gray-400"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Recipient</label>
-                                    <input
-                                        type="text"
-                                        name="recipient"
-                                        value={formData.recipient}
-                                        onChange={handleChange}
-                                        placeholder="Alex Mercer"
-                                        className="w-full px-5 py-4 bg-gray-50/50 dark:bg-gray-900/50 border border-indigo-500/5 dark:border-indigo-500/10 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-gray-900 dark:text-gray-100 font-medium placeholder-gray-400"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Sender</label>
-                                    <input
-                                        type="text"
-                                        name="sender"
-                                        value={formData.sender}
-                                        onChange={handleChange}
-                                        placeholder="Your Name"
-                                        className="w-full px-5 py-4 bg-gray-50/50 dark:bg-gray-900/50 border border-indigo-500/5 dark:border-indigo-500/10 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-gray-900 dark:text-gray-100 font-medium placeholder-gray-400"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="md:col-span-2 space-y-2">
+                        <div className="grid grid-cols-1 gap-6">
+                            <div className="space-y-2">
                                 <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Draft Content</label>
                                 <textarea
                                     ref={textareaRef}
@@ -179,7 +152,7 @@ const EditorPage = () => {
                                         adjustHeight();
                                     }}
                                     placeholder="Hey Alex, hope you're good. Can you check that report? Thanks!"
-                                    className="w-full min-h-[280px] px-6 py-6 bg-gray-50/50 dark:bg-gray-900/50 border border-indigo-500/5 dark:border-indigo-500/10 rounded-[2rem] focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none resize-none transition-all duration-300 text-gray-900 dark:text-gray-100 font-medium placeholder-gray-400 shadow-inner"
+                                    className="w-full min-h-[320px] px-6 py-6 bg-gray-50/50 dark:bg-gray-900/50 border border-indigo-500/5 dark:border-indigo-500/10 rounded-[2rem] focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none resize-none transition-all duration-300 text-gray-900 dark:text-gray-100 font-medium placeholder-gray-400 shadow-inner"
                                 />
                             </div>
                         </div>
