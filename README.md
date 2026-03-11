@@ -9,11 +9,12 @@ ToneForge is a powerful MERN stack application designed to bridge the gap betwee
 ## ✨ Features
 
 - **🚀 Intuitive AI Conversion**: Instantly transform casual text into formal, professional language.
+- **🌍 Global Translation**: Professional-grade translation support for multiple languages (Spanish, French, German, etc.) integrated into the editor.
+- **⚖️ Legal Analysis Engine**: Advanced parsing of contracts and legal emails to extract obligations, deadlines, and risk flags with a dashboard-style output.
 - **🎭 Context-Aware Tones**: Choose between Business, Academic, or Corporate tones to suit your specific needs.
-- **📂 History & Management**: Keep track of all your past conversions with a structured history dashboard.
+- **📂 Enhanced Audit Trail**: Secure history management for both email formalizations and legal reports, with support for translation viewing.
 - **🔐 Secure Authentication**: Full user authentication system powered by JWT for safe and private use.
-- **⚡ Modern UI/UX**: Built with React and Tailwind CSS for a sleek, responsive, and seamless experience.
-- **🛰️ AI Proxy Architecture**: Robust backend proxying to a high-performance AI service hosted on Hugging Face Spaces.
+- **⚡ Premium UI/UX**: A state-of-the-art dashboard built with React, Framer Motion, and Lucide icons featuring mesh gradients and dynamic layouts.
 
 ---
 
@@ -21,10 +22,10 @@ ToneForge is a powerful MERN stack application designed to bridge the gap betwee
 
 ### Frontend
 - **Framework**: React.js (Vite)
-- **Styling**: Tailwind CSS
+- **Styling**: Vanilla CSS with Modern UI patterns
 - **Animations**: Framer Motion
 - **Icons**: Lucide React
-- **Networking**: Axios
+- **Networking**: Axios / Fetch
 
 ### Backend
 - **Environment**: Node.js & Express
@@ -59,7 +60,7 @@ ToneForge is a powerful MERN stack application designed to bridge the gap betwee
    PORT=5000
    MONGO_URI=your_mongodb_uri
    JWT_SECRET=your_secret_key
-   AI_API_ENDPOINT=https://dxv39-toneforge.hf.space/formalize_email
+   AI_BASE_URL=https://kush26-toneforge.hf.space
    AI_API_KEY=your_api_key
    ```
 
