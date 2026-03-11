@@ -10,6 +10,8 @@ import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import './index.css';
 
+import LegalPage from './pages/LegalPage';
+
 function App() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
@@ -23,6 +25,14 @@ function App() {
           element={
             <ProtectedRoute>
               <EditorPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/legal"
+          element={
+            <ProtectedRoute>
+              <LegalPage />
             </ProtectedRoute>
           }
         />

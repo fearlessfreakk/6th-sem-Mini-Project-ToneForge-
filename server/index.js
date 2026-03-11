@@ -12,6 +12,10 @@ const History = require('./models/History');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Defensive: Trim AI credentials
+const AI_BASE_URL = (process.env.AI_BASE_URL || 'https://dxv39-toneforge.hf.space').trim();
+const AI_API_KEY = (process.env.AI_API_KEY || '').trim();
+
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/formalizeit')
   .then(() => console.log('MongoDB Connected'))
@@ -24,120 +28,134 @@ app.use('/api/auth', authRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/users', userRoutes);
 
-// Proxy endpoint
+// Formalize endpoint
 app.post('/api/convert', protect, async (req, res) => {
   try {
-    const { raw_email, text, category, tone, subject, sender, recipient } = req.body;
-    const inputEmail = raw_email || text;
-    const inputCategory = category || tone || 'business';
+    const { raw_email, category, language } = req.body;
+    const inputEmail = raw_email;
+    const inputCategory = category || 'business';
+    const targetLanguage = language || 'english';
 
     if (!inputEmail) {
       return res.status(400).json({ error: 'Email text is required' });
     }
 
-    // Mock Mode: If input contains "MOCK_TEST", return a dummy response
+    let aiResult;
+    // Mock Mode
     if (inputEmail.toUpperCase().includes('MOCK_TEST')) {
-      const mockResponses = {
-        business: {
-          subject: "Follow-up: Project Timeline Update",
-          sender: "Jamie Smith",
-          to: "Alex Mercer",
+        aiResult = {
+        category: inputCategory,
+        email: {
+          subject: "Refined Subject",
+          sender: "Sender Name",
+          to: "Recipient Name",
           cc: null,
-          body: "Dear Alex,\n\nI hope this email finds you well. I am writing to provide a quick update regarding our project timeline for the upcoming weekend. Please let me know if you have any questions.\n\nSincerely,\nJamie Smith"
-        },
-        academic: {
-          subject: "Research Inquiry: Weekend Communication Patterns",
-          sender: "Jamie Smith",
-          to: "Professor Mercer",
-          cc: null,
-          body: "Dear Professor Mercer,\n\nI hope you are having a productive week. Regarding my research into weekend communication patterns, I have completed the preliminary 'MOCK_TEST' inputs. I would appreciate your feedback on the structured outputs.\n\nBest regards,\nJamie Smith\nUniversity of ToneForge"
-        },
-        corporate: {
-          subject: "Update: Regional Hiking Operations",
-          sender: "Jamie Smith",
-          to: "Management Team",
-          cc: null,
-          body: "Hello Team,\n\nPlease be advised that the hiking operations scheduled for Saturday are currently under review. We aim to optimize all recreational synergies to ensure maximum team alignment. Further updates will be provided by EOD.\n\nKind regards,\nJamie Smith\nOperations Lead\nToneForgeAI"
+          body: "This is a formalized email body for testing."
         }
       };
-
-      const mockData = mockResponses[inputCategory] || mockResponses.business;
-
-      try {
-        await History.create({
-          userId: req.user.id,
-          originalText: inputEmail,
-          formalizedText: mockData.body,
-          subject: mockData.subject,
-          sender: mockData.sender,
-          recipient: mockData.to,
-          tone: inputCategory,
-          category: inputCategory,
-        });
-        return res.json({
-          category: inputCategory,
-          email: mockData
-        });
-      } catch (error) {
-        console.error("Mock History Error:", error);
-        return res.status(500).json({ message: "Error saving mock history" });
+      if (targetLanguage.toLowerCase() !== 'english') {
+        aiResult.translated_email = { ...aiResult.email, language: targetLanguage, body: `(Translated to ${targetLanguage}) ` + aiResult.email.body };
       }
+    } else {
+        console.log(`Hitting AI Service (Formalize): ${AI_BASE_URL}/formalize_email`);
+        const response = await axios.post(`${AI_BASE_URL}/formalize_email`, {
+            raw_email: inputEmail,
+            category: inputCategory,
+            language: targetLanguage
+          }, {
+            headers: { 'Authorization': `Bearer ${AI_API_KEY}` }
+          });
+          aiResult = response.data;
     }
-
-    // Forward to AI Service
-    // Endpoint and Key from environment variables
-    const response = await axios.post(process.env.AI_API_ENDPOINT, {
-      raw_email: inputEmail,
-      category: inputCategory
-    }, {
-      headers: {
-        'Authorization': `Bearer ${process.env.AI_API_KEY}`
-      }
-    });
-
-    // teammate's API returns: { "category": "...", "email": { "subject": "...", "body": "...", ... } }
-    // OR it might return { "category": "...", "email": "..." } if the model is simple
-    const aiResult = response.data;
-    const structuredEmail = (typeof aiResult.email === 'object' && aiResult.email !== null) ? aiResult.email : null;
-    const emailBody = structuredEmail?.body || (typeof aiResult.email === 'string' ? aiResult.email : aiResult.body || "");
 
     // Save to History
-    if (emailBody) {
-      await History.create({
-        userId: req.user.id,
-        originalText: inputEmail,
-        formalizedText: emailBody,
-        subject: structuredEmail?.subject || subject || "",
-        sender: structuredEmail?.sender || sender || "",
-        recipient: structuredEmail?.to || structuredEmail?.recipient || recipient || "",
-        tone: inputCategory,
-        category: inputCategory,
-      });
+    try {
+        await History.create({
+            userId: req.user.id,
+            type: 'formalization',
+            originalText: inputEmail,
+            formalizedText: aiResult.email?.body || (typeof aiResult.email === 'string' ? aiResult.email : ''),
+            subject: aiResult.email?.subject || '',
+            category: aiResult.category || inputCategory,
+            language: targetLanguage,
+            translatedBody: aiResult.translated_email?.body,
+            translatedSubject: aiResult.translated_email?.subject
+        });
+    } catch (historyError) {
+        console.error("History Save Error:", historyError);
     }
 
-    // Send response back to frontend strictly following the requested format
-    res.json({
-      category: aiResult.category || inputCategory,
-      email: structuredEmail ? {
-        subject: structuredEmail.subject || "",
-        sender: structuredEmail.sender || "",
-        to: structuredEmail.to || structuredEmail.recipient || "",
-        cc: structuredEmail.cc || null,
-        body: structuredEmail.body || emailBody
-      } : emailBody // Fallback to raw string if not structured
-    });
+    res.json(aiResult);
   } catch (error) {
-    console.error('Proxy Error:', error.message);
-    if (error.code === 'ECONNREFUSED') {
-      return res.status(503).json({ error: 'AI Service (FastAPI) is offline.' });
+    console.error('Formalize Error:', error.message);
+    let errorMessage = 'Internal Server Error';
+    if (error.response?.data) {
+        errorMessage = typeof error.response.data === 'string' ? error.response.data : JSON.stringify(error.response.data);
+    } else if (error.message) {
+        errorMessage = error.message;
     }
-    if (error.response) {
-      return res.status(error.response.status).json(error.response.data);
+    res.status(error.response?.status || 500).json({ error: errorMessage });
+  }
+});
+
+// Legal Parse endpoint
+app.post('/api/parse_legal', protect, async (req, res) => {
+  try {
+    const { raw_email } = req.body;
+    if (!raw_email) return res.status(400).json({ error: 'Email content is required' });
+
+    let aiResult;
+    // Mock Mode
+    if (raw_email.toUpperCase().includes('MOCK_TEST')) {
+        aiResult = {
+            obligations: ["Do the thing", "Pay the money"],
+            deadlines: ["Tomorrow", "Next week"],
+            clauses: [{ clause_type: "Termination", text: "You can leave whenever.", risk_level: "low" }],
+            risk_flags: ["Vague wording"],
+            overall_risk: "low",
+            plain_summary: "A very friendly contract."
+        };
+    } else {
+        console.log(`Hitting AI Service (Legal): ${AI_BASE_URL}/parse_legal_email`);
+        const response = await axios.post(`${AI_BASE_URL}/parse_legal_email`, {
+            raw_email
+        }, {
+            headers: { 'Authorization': `Bearer ${AI_API_KEY}` }
+        });
+        aiResult = response.data;
     }
-    res.status(500).json({ error: 'Internal Server Error' });
+
+    // Save to History
+    try {
+        await History.create({
+            userId: req.user.id,
+            type: 'legal',
+            originalText: raw_email,
+            obligations: aiResult.obligations,
+            deadlines: aiResult.deadlines,
+            clauses: aiResult.clauses,
+            riskFlags: aiResult.risk_flags,
+            overallRisk: aiResult.overall_risk,
+            plainSummary: aiResult.plain_summary
+        });
+    } catch (historyError) {
+        console.error("History Save Error (Legal):", historyError);
+    }
+
+    res.json(aiResult);
+  } catch (error) {
+    console.error('Legal Parse Error:', error.message);
+    let errorMessage = 'Internal Server Error';
+    if (error.response?.data) {
+        errorMessage = typeof error.response.data === 'string' ? error.response.data : JSON.stringify(error.response.data);
+    } else if (error.message) {
+        errorMessage = error.message;
+    }
+    res.status(error.response?.status || 500).json({ error: errorMessage });
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`Backend server running on http://localhost:${PORT}`);
+    console.log(`Backend server running on http://localhost:${PORT}`);
 });
+

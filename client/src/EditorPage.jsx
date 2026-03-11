@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from './context/AuthContext';
 import { Link } from 'react-router-dom';
-import { Sparkles, MessageSquare, Copy, Check, ArrowLeft, Mail, Send, Wand2, GraduationCap, Building2 } from 'lucide-react';
+import { Sparkles, MessageSquare, Copy, Check, ArrowLeft, Mail, Send, Wand2, GraduationCap, Building2, Languages } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const ToneCard = ({ id, label, icon: Icon, active, onClick }) => (
@@ -29,9 +29,10 @@ const ToneCard = ({ id, label, icon: Icon, active, onClick }) => (
 const EditorPage = () => {
     const [formData, setFormData] = useState({
         raw_email: '',
-        category: 'business'
+        category: 'business',
+        language: 'english'
     });
-    const [outputText, setOutputText] = useState('');
+    const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [copied, setCopied] = useState(false);
@@ -68,7 +69,7 @@ const EditorPage = () => {
 
         setLoading(true);
         setError('');
-        setOutputText('');
+        setResult(null);
 
         try {
             const response = await fetch('http://localhost:5000/api/convert', {
@@ -79,24 +80,21 @@ const EditorPage = () => {
                 },
                 body: JSON.stringify({
                     raw_email: formData.raw_email,
-                    category: formData.category
+                    category: formData.category,
+                    language: formData.language
                 }),
             });
 
             const data = await response.json();
 
             if (!response.ok) {
-                // Handle unauthorized specifically
                 if (response.status === 401) {
                     throw new Error(data.error || 'Session expired or invalid. Please log in again.');
                 }
                 throw new Error(data.error || 'Failed to convert text');
             }
 
-            // Extract the refined text from the standardized structured format
-            // Check for nested email.body or top-level email/body
-            const refinedText = data.email?.body || data.email || data.body || "No body returned in response";
-            setOutputText(refinedText);
+            setResult(data);
 
         } catch (err) {
             setError(err.message);
@@ -105,9 +103,9 @@ const EditorPage = () => {
         }
     };
 
-    const handleCopy = () => {
-        if (!outputText) return;
-        navigator.clipboard.writeText(outputText);
+    const handleCopy = (text) => {
+        if (!text) return;
+        navigator.clipboard.writeText(text);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
@@ -141,8 +139,25 @@ const EditorPage = () => {
 
                         {/* Form Inputs */}
                         <div className="grid grid-cols-1 gap-6">
-                            <div className="space-y-2">
-                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Draft Content</label>
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Draft Content</label>
+                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg border border-indigo-500/10">
+                                        <Languages size={14} className="text-indigo-500" />
+                                        <select
+                                            name="language"
+                                            value={formData.language}
+                                            onChange={handleChange}
+                                            className="bg-transparent text-[10px] font-black uppercase tracking-widest text-gray-600 dark:text-gray-400 outline-none cursor-pointer"
+                                        >
+                                            <option value="english">English (Default)</option>
+                                            <option value="spanish">Spanish</option>
+                                            <option value="french">French</option>
+                                            <option value="german">German</option>
+                                            <option value="hindi">Hindi</option>
+                                        </select>
+                                    </div>
+                                </div>
                                 <textarea
                                     ref={textareaRef}
                                     name="raw_email"
@@ -185,51 +200,96 @@ const EditorPage = () => {
 
                 {/* Output Section */}
                 <AnimatePresence mode="wait">
-                    {(outputText || error) && (
+                    {(result || error) && (
                         <motion.div
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 20 }}
-                            className="mt-12 space-y-6"
+                            className="mt-12 space-y-8"
                         >
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-3 font-display tracking-tight uppercase">
-                                    <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
-                                        <Check className="text-indigo-500" size={18} />
-                                    </div>
-                                    Refined Result
-                                </h2>
-                                {outputText && (
-                                    <button
-                                        onClick={handleCopy}
-                                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${copied
-                                            ? 'bg-green-500 text-white shadow-lg shadow-green-500/20'
-                                            : 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-700'
-                                            }`}
-                                    >
-                                        {copied ? <Check size={14} /> : <Copy size={14} />}
-                                        {copied ? 'Copied' : 'Copy Result'}
-                                    </button>
-                                )}
-                            </div>
-
-                            <div className={`glass rounded-[2rem] border-2 ${error ? 'border-red-500/20 bg-red-50/50' : 'border-indigo-500/20 bg-indigo-50/10'} overflow-hidden relative group`}>
-                                {error ? (
+                            {error ? (
+                                <div className="glass rounded-[2rem] border-2 border-red-500/20 bg-red-50/50 overflow-hidden relative group">
                                     <div className="p-10 text-center text-red-500">
                                         <p className="font-black uppercase tracking-widest mb-2">Forge Interrupted</p>
                                         <p className="text-sm font-medium opacity-80">{error}</p>
                                     </div>
-                                ) : (
-                                    <div className="p-10 md:p-12 relative">
-                                        <div className="absolute top-4 right-4 text-[8px] font-black text-indigo-500/40 uppercase tracking-[0.3em]">Tone: {formData.category}</div>
-                                        <div className="prose dark:prose-invert max-w-none">
-                                            <p className="whitespace-pre-wrap text-gray-900 dark:text-gray-100 leading-relaxed font-medium text-lg">
-                                                {outputText}
-                                            </p>
+                                </div>
+                            ) : (
+                                <>
+                                    {/* Formalized Result */}
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <h2 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-3 font-display tracking-tight uppercase">
+                                                <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+                                                    <Check className="text-indigo-500" size={18} />
+                                                </div>
+                                                Refined Formal Email
+                                            </h2>
+                                            <button
+                                                onClick={() => handleCopy(result.email?.body || result.email)}
+                                                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${copied
+                                                    ? 'bg-green-500 text-white shadow-lg shadow-green-500/20'
+                                                    : 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-700'
+                                                    }`}
+                                            >
+                                                {copied ? <Check size={14} /> : <Copy size={14} />}
+                                                {copied ? 'Copied' : 'Copy Result'}
+                                            </button>
+                                        </div>
+                                        <div className="glass rounded-[2rem] border-2 border-indigo-500/20 bg-indigo-50/10 overflow-hidden relative group p-10 md:p-12">
+                                            <div className="absolute top-4 right-4 text-[8px] font-black text-indigo-500/40 uppercase tracking-[0.3em]">Tone: {result.category}</div>
+                                            <div className="prose dark:prose-invert max-w-none">
+                                                {result.email?.subject && (
+                                                    <div className="mb-6 p-4 bg-white/50 dark:bg-gray-900/50 rounded-xl border border-indigo-500/5">
+                                                        <p className="text-[8px] font-black text-indigo-500 uppercase tracking-widest mb-1">Subject</p>
+                                                        <p className="font-bold text-gray-900 dark:text-white">{result.email.subject}</p>
+                                                    </div>
+                                                )}
+                                                <p className="whitespace-pre-wrap text-gray-900 dark:text-gray-100 leading-relaxed font-medium text-lg">
+                                                    {result.email?.body || (typeof result.email === 'string' ? result.email : '')}
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
-                                )}
-                            </div>
+
+                                    {/* Translated Result */}
+                                    {result.translated_email && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="space-y-4"
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <h2 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-3 font-display tracking-tight uppercase">
+                                                    <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                                                        <Languages className="text-purple-500" size={18} />
+                                                    </div>
+                                                    Translated ({result.translated_email.language})
+                                                </h2>
+                                                <button
+                                                    onClick={() => handleCopy(result.translated_email.body)}
+                                                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 bg-purple-600 text-white shadow-lg shadow-purple-500/20 hover:bg-purple-700"
+                                                >
+                                                    <Copy size={14} /> Copy Translation
+                                                </button>
+                                            </div>
+                                            <div className="glass rounded-[2rem] border-2 border-purple-500/20 bg-purple-50/10 overflow-hidden relative group p-10 md:p-12">
+                                                <div className="prose dark:prose-invert max-w-none">
+                                                    {result.translated_email.subject && (
+                                                        <div className="mb-6 p-4 bg-white/50 dark:bg-gray-900/50 rounded-xl border border-purple-500/5">
+                                                            <p className="text-[8px] font-black text-purple-500 uppercase tracking-widest mb-1">Subject</p>
+                                                            <p className="font-bold text-gray-900 dark:text-white">{result.translated_email.subject}</p>
+                                                        </div>
+                                                    )}
+                                                    <p className="whitespace-pre-wrap text-gray-900 dark:text-gray-100 leading-relaxed font-medium text-lg italic">
+                                                        {result.translated_email.body}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </>
+                            )}
                         </motion.div>
                     )}
                 </AnimatePresence>

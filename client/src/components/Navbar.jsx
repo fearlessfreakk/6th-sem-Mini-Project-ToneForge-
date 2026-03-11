@@ -79,6 +79,7 @@ const Navbar = () => {
                         {user && (
                             <>
                                 <NavLink to="/editor" active={location.pathname === '/editor'}>Editor</NavLink>
+                                <NavLink to="/legal" active={location.pathname === '/legal'}>Legal Analysis</NavLink>
                                 <NavLink to="/history" active={location.pathname === '/history'}>History</NavLink>
                             </>
                         )}

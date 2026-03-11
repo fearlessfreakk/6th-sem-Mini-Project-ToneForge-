@@ -6,35 +6,49 @@ const historySchema = new mongoose.Schema({
         ref: 'User',
         required: true,
     },
+    type: {
+        type: String,
+        enum: ['formalization', 'legal'],
+        default: 'formalization',
+    },
     originalText: {
         type: String,
         required: true,
     },
+    // Formalization specific
     formalizedText: {
         type: String,
-        required: true,
     },
     subject: {
         type: String,
         default: '',
-    },
-    sender: {
-        type: String,
-        default: '',
-    },
-    recipient: {
-        type: String,
-        default: '',
-    },
-    tone: {
-        type: String,
-        default: 'Formal',
     },
     category: {
         type: String,
         enum: ['business', 'academic', 'corporate'],
         default: 'business',
     },
+    language: {
+        type: String,
+        default: 'english',
+    },
+    translatedBody: {
+        type: String,
+    },
+    translatedSubject: {
+        type: String,
+    },
+    // Legal Analysis specific
+    obligations: [String],
+    deadlines: [String],
+    clauses: [{
+        clause_type: String,
+        text: String,
+        risk_level: String,
+    }],
+    riskFlags: [String],
+    overallRisk: String,
+    plainSummary: String,
 }, { timestamps: true });
 
 module.exports = mongoose.model('History', historySchema);

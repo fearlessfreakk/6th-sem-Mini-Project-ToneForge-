@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Zap, Shield, ArrowRight, CheckCircle, Sparkles, Send, Copy } from 'lucide-react';
+import { Zap, Shield, ArrowRight, CheckCircle, Sparkles, Send, Copy, Languages, ShieldAlert, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { useAuth } from './context/AuthContext';
@@ -227,7 +227,7 @@ const LandingPage = () => {
                         </p>
                     </motion.div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                         <FeatureCard
                             index={0}
                             icon={<Zap className="text-indigo-500" size={28} />}
@@ -236,15 +236,21 @@ const LandingPage = () => {
                         />
                         <FeatureCard
                             index={1}
-                            icon={<Shield className="text-indigo-500" size={28} />}
-                            title="Contextual IQ"
-                            description="Our AI understands nuances between Corporate, Business, and Academic environments."
+                            icon={<Languages className="text-indigo-500" size={28} />}
+                            title="Global Reach"
+                            description="Break language barriers with built-in professional translation for Spanish, French, German, and more."
                         />
                         <FeatureCard
                             index={2}
-                            icon={<CheckCircle className="text-indigo-500" size={28} />}
+                            icon={<ShieldAlert className="text-indigo-500" size={28} />}
+                            title="Legal Insight"
+                            description="Upload contracts and let AI extract key obligations, critical deadlines, and identify hidden risks."
+                        />
+                        <FeatureCard
+                            index={3}
+                            icon={<Clock className="text-indigo-500" size={28} />}
                             title="Audit Trail"
-                            description="Always have your drafts and final versions synced and searchable in a secure history."
+                            description="Experience a secure archive of every forging and legal analysis, fully synced and searchable."
                         />
                     </div>
                 </div>

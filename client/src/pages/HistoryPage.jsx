@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { Copy, Check, Clock, Search, Filter, Mail, GraduationCap, Building2 } from 'lucide-react';
+import { Copy, Check, Clock, Search, Mail, GraduationCap, Building2, ShieldAlert, FileText, ChevronRight, Languages, ScrollText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const HistoryPage = () => {
@@ -59,13 +59,12 @@ const HistoryPage = () => {
 
     return (
         <div className="min-h-screen bg-white dark:bg-gray-950 pt-32 pb-20 px-4 sm:px-6 lg:px-8 transition-colors duration-300 relative overflow-hidden">
-            {/* Background Decorations */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
                 <div className="absolute top-[20%] left-[-10%] w-[40%] h-[40%] bg-indigo-500/5 rounded-full blur-[120px]"></div>
                 <div className="absolute bottom-0 right-[-10%] w-[40%] h-[40%] bg-teal-500/5 rounded-full blur-[120px]"></div>
             </div>
 
-            <div className="max-w-5xl mx-auto">
+            <div className="max-w-6xl mx-auto">
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -76,7 +75,7 @@ const HistoryPage = () => {
                             <Clock className="text-indigo-600" size={40} />
                             Audit Trail
                         </h1>
-                        <p className="text-gray-500 dark:text-gray-400 mt-2 font-medium">Your archive of forged excellence.</p>
+                        <p className="text-gray-500 dark:text-gray-400 mt-2 font-medium">Your archive of forged excellence and legal insights.</p>
                     </div>
                 </motion.div>
 
@@ -93,11 +92,12 @@ const HistoryPage = () => {
                         <p className="text-gray-400 dark:text-gray-500 font-medium mt-2">Start a new conversion to fill your history.</p>
                     </motion.div>
                 ) : (
-                    <div className="grid grid-cols-1 gap-8">
+                    <div className="grid grid-cols-1 gap-12">
                         {history.map((item, index) => {
+                            const isLegal = item.type === 'legal';
                             const cat = (item.category || 'business').toLowerCase();
                             const info = catInfo[cat] || catInfo.business;
-                            const Icon = info.icon;
+                            const Icon = isLegal ? ShieldAlert : info.icon;
 
                             return (
                                 <motion.div
@@ -105,64 +105,132 @@ const HistoryPage = () => {
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: index * 0.05 }}
-                                    className="glass rounded-[2rem] shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 border-indigo-500/10 overflow-hidden group"
+                                    className="glass rounded-[2.5rem] shadow-xl border-indigo-500/10 overflow-hidden group"
                                 >
-                                    <div className="bg-gray-50/50 dark:bg-black/20 px-8 py-5 border-b border-indigo-500/5 flex flex-wrap justify-between items-center gap-4">
+                                    {/* Header */}
+                                    <div className="bg-gray-50/50 dark:bg-black/20 px-8 py-6 border-b border-indigo-500/5 flex flex-wrap justify-between items-center gap-4">
                                         <div className="flex items-center gap-4">
-                                            <div className={`w-10 h-10 rounded-xl ${info.bg} flex items-center justify-center ${info.color}`}>
-                                                <Icon size={18} />
+                                            <div className={`w-12 h-12 rounded-2xl ${isLegal ? 'bg-red-500/10 text-red-500' : info.bg + ' ' + info.color} flex items-center justify-center shadow-inner`}>
+                                                <Icon size={22} />
                                             </div>
                                             <div>
-                                                <h3 className="text-lg font-black text-gray-900 dark:text-white truncate max-w-xs font-display tracking-tight leading-none mb-1">
-                                                    {item.subject || 'Untitled Forging'}
+                                                <h3 className="text-xl font-black text-gray-900 dark:text-white truncate max-w-sm font-display tracking-tight leading-none mb-2">
+                                                    {isLegal ? 'Legal Analysis Report' : (item.subject || 'Untitled Forging')}
                                                 </h3>
-                                                <div className="flex items-center gap-2">
-                                                    <span className={`text-[10px] font-black uppercase tracking-widest ${info.color}`}>
-                                                        {cat} Tone
+                                                <div className="flex items-center gap-3">
+                                                    <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${isLegal ? 'text-red-500' : info.color}`}>
+                                                        {isLegal ? `${item.overallRisk} Risk` : `${cat} Tone`}
                                                     </span>
+                                                    {!isLegal && item.language && item.language !== 'english' && (
+                                                        <>
+                                                            <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700"></span>
+                                                            <span className="text-[10px] font-black text-purple-500 uppercase tracking-widest flex items-center gap-1">
+                                                                <Languages size={10} /> {item.language}
+                                                            </span>
+                                                        </>
+                                                    )}
                                                     <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700"></span>
-                                                    <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                                                    <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em]">
                                                         {getTimeAgo(item.createdAt)}
                                                     </span>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <button
-                                            onClick={() => handleCopy(item.formalizedText, item._id)}
-                                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${copiedId === item._id
-                                                ? 'bg-green-500 text-white'
-                                                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-indigo-600 hover:text-white border border-indigo-500/10'
-                                                }`}
-                                        >
-                                            {copiedId === item._id ? <Check size={14} /> : <Copy size={14} />}
-                                            {copiedId === item._id ? 'Copied' : 'Copy Forged'}
-                                        </button>
+                                        {!isLegal && (
+                                            <button
+                                                onClick={() => handleCopy(item.translatedBody || item.formalizedText, item._id)}
+                                                className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all duration-300 shadow-lg ${copiedId === item._id
+                                                    ? 'bg-green-500 text-white shadow-green-500/20'
+                                                    : 'bg-indigo-600 text-white shadow-indigo-500/20 hover:scale-105'
+                                                    }`}
+                                            >
+                                                {copiedId === item._id ? <Check size={14} /> : <Copy size={14} />}
+                                                {copiedId === item._id ? 'Copied' : 'Copy Final'}
+                                            </button>
+                                        )}
                                     </div>
 
-                                    <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        <div className="space-y-4">
-                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                                <span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-700"></span>
-                                                Original Draft
-                                            </label>
-                                            <div className="p-5 bg-gray-50/50 dark:bg-black/10 rounded-2xl border border-gray-100 dark:border-gray-800/50 min-h-[120px]">
-                                                <p className="text-gray-500 dark:text-gray-400 text-sm font-medium italic">
-                                                    "{item.originalText}"
-                                                </p>
+                                    {/* Content */}
+                                    <div className="p-8 md:p-10">
+                                        {isLegal ? (
+                                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                                                <div className="lg:col-span-2 space-y-8">
+                                                    <div className="space-y-4">
+                                                        <label className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] flex items-center gap-2">
+                                                            <ScrollText size={14} /> Summary
+                                                        </label>
+                                                        <p className="text-gray-700 dark:text-gray-300 text-lg font-medium leading-relaxed italic">
+                                                            "{item.plainSummary}"
+                                                        </p>
+                                                    </div>
+                                                    
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                        <div className="space-y-4">
+                                                            <label className="text-[10px] font-black text-green-500 uppercase tracking-[0.3em]">Obligations</label>
+                                                            <div className="space-y-3">
+                                                                {item.obligations?.map((obj, i) => (
+                                                                    <div key={i} className="flex gap-2 text-sm text-gray-600 dark:text-gray-400 font-medium border-l-2 border-green-500/30 pl-3">
+                                                                        {obj}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                        <div className="space-y-4">
+                                                            <label className="text-[10px] font-black text-amber-500 uppercase tracking-[0.3em]">Deadlines</label>
+                                                            <div className="space-y-3">
+                                                                {item.deadlines?.map((dl, i) => (
+                                                                    <div key={i} className="flex gap-2 text-sm text-gray-600 dark:text-gray-400 font-medium border-l-2 border-amber-500/30 pl-3">
+                                                                        {dl}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-6">
+                                                    <label className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em]">Risk Flags</label>
+                                                    <div className="space-y-3">
+                                                        {item.riskFlags?.map((flag, i) => (
+                                                            <div key={i} className="p-3 rounded-xl bg-red-500/5 border border-red-500/10 text-xs font-bold text-red-500 flex items-center gap-2">
+                                                                <ChevronRight size={12} /> {flag}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className="space-y-4">
-                                            <label className="text-[10px] font-black text-indigo-500 uppercase tracking-widest flex items-center gap-2">
-                                                <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
-                                                Refined Result
-                                            </label>
-                                            <div className="p-5 bg-indigo-500/5 dark:bg-indigo-500/10 rounded-2xl border border-indigo-500/10 min-h-[120px]">
-                                                <p className="text-gray-900 dark:text-gray-100 text-sm font-bold leading-relaxed">
-                                                    {item.formalizedText}
-                                                </p>
+                                        ) : (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                                <div className="space-y-4">
+                                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] flex items-center gap-2">
+                                                        <span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-700"></span>
+                                                        Original Draft
+                                                    </label>
+                                                    <div className="p-6 bg-gray-50/50 dark:bg-black/10 rounded-[2rem] border border-gray-100 dark:border-gray-800/50 min-h-[150px]">
+                                                        <p className="text-gray-500 dark:text-gray-400 text-sm font-medium italic leading-relaxed">
+                                                            "{item.originalText}"
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-4">
+                                                    <label className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] flex items-center gap-2">
+                                                        <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+                                                        {item.translatedBody ? `Refined & Translated (${item.language})` : 'Refined Result'}
+                                                    </label>
+                                                    <div className={`p-6 rounded-[2rem] border-2 min-h-[150px] shadow-inner ${item.translatedBody ? 'bg-purple-500/5 border-purple-500/20' : 'bg-indigo-500/5 border-indigo-500/20'}`}>
+                                                        {item.translatedSubject && (
+                                                            <div className="mb-4 pb-4 border-b border-indigo-500/10">
+                                                                <p className="text-[8px] font-black text-indigo-500 uppercase tracking-widest mb-1">Subject</p>
+                                                                <p className="font-bold text-gray-900 dark:text-white leading-tight">{item.translatedSubject}</p>
+                                                            </div>
+                                                        )}
+                                                        <p className={`text-gray-900 dark:text-gray-100 text-sm font-bold leading-relaxed ${item.translatedBody ? 'italic' : ''}`}>
+                                                            {item.translatedBody || item.formalizedText}
+                                                        </p>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </div>
+                                        )}
                                     </div>
                                 </motion.div>
                             );
@@ -175,4 +243,3 @@ const HistoryPage = () => {
 };
 
 export default HistoryPage;
-
