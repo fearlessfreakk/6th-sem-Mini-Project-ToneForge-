@@ -80,6 +80,7 @@ const Navbar = () => {
                             <>
                                 <NavLink to="/editor" active={location.pathname === '/editor'}>Editor</NavLink>
                                 <NavLink to="/legal" active={location.pathname === '/legal'}>Legal Analysis</NavLink>
+                                <NavLink to="/negotiate" active={location.pathname === '/negotiate'}>Negotiation</NavLink>
                                 <NavLink to="/history" active={location.pathname === '/history'}>History</NavLink>
                             </>
                         )}
@@ -153,8 +154,11 @@ const Navbar = () => {
                             </Link>
                             {user ? (
                                 <>
-                                    <Link to="/editor" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-4 py-4 rounded-2xl text-lg font-black text-gray-900 dark:text-white hover:bg-indigo-600 hover:text-white transition-all uppercase tracking-tight">
-                                        <PenTool size={20} /> Editor
+                                    <Link to="/legal" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-4 py-4 rounded-2xl text-lg font-black text-gray-900 dark:text-white hover:bg-indigo-600 hover:text-white transition-all uppercase tracking-tight">
+                                        <Gavel size={20} /> Legal Analysis
+                                    </Link>
+                                    <Link to="/negotiate" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-4 py-4 rounded-2xl text-lg font-black text-gray-900 dark:text-white hover:bg-indigo-600 hover:text-white transition-all uppercase tracking-tight">
+                                        <Handshake size={20} /> Negotiation
                                     </Link>
                                     <Link to="/history" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-4 py-4 rounded-2xl text-lg font-black text-gray-900 dark:text-white hover:bg-indigo-600 hover:text-white transition-all uppercase tracking-tight">
                                         <History size={20} /> History

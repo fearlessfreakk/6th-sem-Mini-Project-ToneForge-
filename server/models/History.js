@@ -8,7 +8,7 @@ const historySchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['formalization', 'legal'],
+        enum: ['formalization', 'legal', 'negotiation'],
         default: 'formalization',
     },
     originalText: {
@@ -49,6 +49,16 @@ const historySchema = new mongoose.Schema({
     riskFlags: [String],
     overallRisk: String,
     plainSummary: String,
+    // Negotiation specific
+    topic: String,
+    roundsCompleted: Number,
+    agreementReached: Boolean,
+    summary: String,
+    emailThread: [{
+        role: String,
+        subject: String,
+        body: String,
+    }],
 }, { timestamps: true });
 
 module.exports = mongoose.model('History', historySchema);

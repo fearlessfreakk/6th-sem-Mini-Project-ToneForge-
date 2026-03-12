@@ -11,6 +11,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import './index.css';
 
 import LegalPage from './pages/LegalPage';
+import NegotiationPage from './pages/NegotiationPage';
 
 function App() {
   return (
@@ -33,6 +34,14 @@ function App() {
           element={
             <ProtectedRoute>
               <LegalPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/negotiate"
+          element={
+            <ProtectedRoute>
+              <NegotiationPage />
             </ProtectedRoute>
           }
         />

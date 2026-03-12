@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { Copy, Check, Clock, Search, Mail, GraduationCap, Building2, ShieldAlert, FileText, ChevronRight, Languages, ScrollText } from 'lucide-react';
+import { Copy, Check, Clock, Search, Mail, GraduationCap, Building2, ShieldAlert, FileText, ChevronRight, Languages, ScrollText, Handshake } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const HistoryPage = () => {
@@ -95,9 +95,12 @@ const HistoryPage = () => {
                     <div className="grid grid-cols-1 gap-12">
                         {history.map((item, index) => {
                             const isLegal = item.type === 'legal';
+                            const isNegotiation = item.type === 'negotiation';
                             const cat = (item.category || 'business').toLowerCase();
                             const info = catInfo[cat] || catInfo.business;
-                            const Icon = isLegal ? ShieldAlert : info.icon;
+                            let Icon = info.icon;
+                            if (isLegal) Icon = ShieldAlert;
+                            if (isNegotiation) Icon = Handshake;
 
                             return (
                                 <motion.div
@@ -115,11 +118,11 @@ const HistoryPage = () => {
                                             </div>
                                             <div>
                                                 <h3 className="text-xl font-black text-gray-900 dark:text-white truncate max-w-sm font-display tracking-tight leading-none mb-2">
-                                                    {isLegal ? 'Legal Analysis Report' : (item.subject || 'Untitled Forging')}
+                                                    {isLegal ? 'Legal Analysis Report' : isNegotiation ? 'Negotiation' : (item.subject || 'Untitled Forging')}
                                                 </h3>
                                                 <div className="flex items-center gap-3">
-                                                    <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${isLegal ? 'text-red-500' : info.color}`}>
-                                                        {isLegal ? `${item.overallRisk} Risk` : `${cat} Tone`}
+                                                    <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${isLegal ? 'text-red-500' : (isNegotiation ? 'text-indigo-500' : info.color)}`}>
+                                                        {isLegal ? `${item.overallRisk} Risk` : (isNegotiation ? `${item.roundsCompleted} Rounds` : `${cat} Tone`)}
                                                     </span>
                                                     {!isLegal && item.language && item.language !== 'english' && (
                                                         <>
@@ -137,7 +140,7 @@ const HistoryPage = () => {
                                             </div>
                                         </div>
 
-                                        {!isLegal && (
+                                        {!isLegal && !isNegotiation && (
                                             <button
                                                 onClick={() => handleCopy(item.translatedBody || item.formalizedText, item._id)}
                                                 className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all duration-300 shadow-lg ${copiedId === item._id
@@ -199,38 +202,66 @@ const HistoryPage = () => {
                                                     </div>
                                                 </div>
                                             </div>
-                                        ) : (
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                                <div className="space-y-4">
-                                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] flex items-center gap-2">
-                                                        <span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-700"></span>
-                                                        Original Draft
-                                                    </label>
-                                                    <div className="p-6 bg-gray-50/50 dark:bg-black/10 rounded-[2rem] border border-gray-100 dark:border-gray-800/50 min-h-[150px]">
-                                                        <p className="text-gray-500 dark:text-gray-400 text-sm font-medium italic leading-relaxed">
-                                                            "{item.originalText}"
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <div className="space-y-4">
-                                                    <label className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] flex items-center gap-2">
-                                                        <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
-                                                        {item.translatedBody ? `Refined & Translated (${item.language})` : 'Refined Result'}
-                                                    </label>
-                                                    <div className={`p-6 rounded-[2rem] border-2 min-h-[150px] shadow-inner ${item.translatedBody ? 'bg-purple-500/5 border-purple-500/20' : 'bg-indigo-500/5 border-indigo-500/20'}`}>
-                                                        {item.translatedSubject && (
-                                                            <div className="mb-4 pb-4 border-b border-indigo-500/10">
-                                                                <p className="text-[8px] font-black text-indigo-500 uppercase tracking-widest mb-1">Subject</p>
-                                                                <p className="font-bold text-gray-900 dark:text-white leading-tight">{item.translatedSubject}</p>
+                                        ) : isNegotiation ? (
+                                                <div className="space-y-6">
+                                                    <div className="flex items-center justify-between bg-indigo-500/5 p-6 rounded-[2rem] border border-indigo-500/10">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className={`p-2 rounded-xl ${item.agreementReached ? 'bg-green-500/10 text-green-500' : 'bg-amber-500/10 text-amber-500'}`}>
+                                                                {item.agreementReached ? <Check size={20} /> : <Handshake size={20} />}
                                                             </div>
-                                                        )}
-                                                        <p className={`text-gray-900 dark:text-gray-100 text-sm font-bold leading-relaxed ${item.translatedBody ? 'italic' : ''}`}>
-                                                            {item.translatedBody || item.formalizedText}
+                                                            <div>
+                                                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Outcome</p>
+                                                                <p className="text-lg font-black text-gray-900 dark:text-white">
+                                                                    {item.agreementReached ? 'Agreement Reached' : 'Discussion Iterated'}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Topic</p>
+                                                            <p className="text-lg font-black text-indigo-600 dark:text-indigo-400">{item.topic}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-4">
+                                                        <label className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] flex items-center gap-2">
+                                                            <ScrollText size={14} /> Strategic Summary
+                                                        </label>
+                                                        <p className="text-gray-700 dark:text-gray-300 text-lg font-medium leading-relaxed italic">
+                                                            "{item.summary}"
                                                         </p>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        )}
+                                            ) : (
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                                    <div className="space-y-4">
+                                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] flex items-center gap-2">
+                                                            <span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-700"></span>
+                                                            Original Draft
+                                                        </label>
+                                                        <div className="p-6 bg-gray-50/50 dark:bg-black/10 rounded-[2rem] border border-gray-100 dark:border-gray-800/50 min-h-[150px]">
+                                                            <p className="text-gray-500 dark:text-gray-400 text-sm font-medium italic leading-relaxed">
+                                                                "{item.originalText}"
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-4">
+                                                        <label className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] flex items-center gap-2">
+                                                            <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+                                                            {item.translatedBody ? `Refined & Translated (${item.language})` : 'Refined Result'}
+                                                        </label>
+                                                        <div className={`p-6 rounded-[2rem] border-2 min-h-[150px] shadow-inner ${item.translatedBody ? 'bg-purple-500/5 border-purple-500/20' : 'bg-indigo-500/5 border-indigo-500/20'}`}>
+                                                            {item.translatedSubject && (
+                                                                <div className="mb-4 pb-4 border-b border-indigo-500/10">
+                                                                    <p className="text-[8px] font-black text-indigo-500 uppercase tracking-widest mb-1">Subject</p>
+                                                                    <p className="font-bold text-gray-900 dark:text-white leading-tight">{item.translatedSubject}</p>
+                                                                </div>
+                                                            )}
+                                                            <p className={`text-gray-900 dark:text-gray-100 text-sm font-bold leading-relaxed ${item.translatedBody ? 'italic' : ''}`}>
+                                                                {item.translatedBody || item.formalizedText}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
                                     </div>
                                 </motion.div>
                             );

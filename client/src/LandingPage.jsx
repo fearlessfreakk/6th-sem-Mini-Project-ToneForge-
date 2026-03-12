@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Zap, Shield, ArrowRight, CheckCircle, Sparkles, Send, Copy, Languages, ShieldAlert, Clock } from 'lucide-react';
+import { Zap, Shield, ArrowRight, CheckCircle, Sparkles, Send, Copy, Languages, ShieldAlert, Clock, Handshake } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { useAuth } from './context/AuthContext';
@@ -227,7 +227,7 @@ const LandingPage = () => {
                         </p>
                     </motion.div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         <FeatureCard
                             index={0}
                             icon={<Zap className="text-indigo-500" size={28} />}
@@ -248,6 +248,12 @@ const LandingPage = () => {
                         />
                         <FeatureCard
                             index={3}
+                            icon={<Handshake className="text-indigo-500" size={28} />}
+                            title="Strategic Negotiation"
+                            description="Simulate entire negotiation rounds. Get AI-driven advice and ready-to-send counter-proposals."
+                        />
+                        <FeatureCard
+                            index={4}
                             icon={<Clock className="text-indigo-500" size={28} />}
                             title="Audit Trail"
                             description="Experience a secure archive of every forging and legal analysis, fully synced and searchable."

@@ -13,7 +13,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Defensive: Trim AI credentials
-const AI_BASE_URL = (process.env.AI_BASE_URL || 'https://dxv39-toneforge.hf.space').trim();
+const AI_BASE_URL = (process.env.AI_BASE_URL || 'https://kush26-toneforge.hf.space').trim();
 const AI_API_KEY = (process.env.AI_API_KEY || '').trim();
 
 // Connect to MongoDB
@@ -150,6 +150,88 @@ app.post('/api/parse_legal', protect, async (req, res) => {
         errorMessage = typeof error.response.data === 'string' ? error.response.data : JSON.stringify(error.response.data);
     } else if (error.message) {
         errorMessage = error.message;
+    }
+    res.status(error.response?.status || 500).json({ error: errorMessage });
+  }
+});
+
+// Negotiation endpoint
+app.post('/api/negotiate', protect, async (req, res) => {
+  try {
+    const { topic, our_position, their_position, category, max_rounds } = req.body;
+    
+    if (!topic || !our_position || !their_position) {
+      return res.status(400).json({ error: 'Topic and both positions are required' });
+    }
+
+    const rounds = parseInt(max_rounds) || 3;
+    const finalMaxRounds = Math.min(Math.max(rounds, 1), 6);
+    const inputCategory = category || 'business';
+
+    let aiResult;
+    // Mock Mode
+    if (topic.toUpperCase().includes('MOCK_TEST') || our_position.toUpperCase().includes('MOCK_TEST')) {
+      aiResult = {
+        topic: topic,
+        rounds_completed: finalMaxRounds,
+        agreement_reached: true,
+        summary: "The negotiation was successful. Both parties agreed to a mutually beneficial compromise after several rounds of discussion regarding the " + topic + ".",
+        email_thread: [
+          {
+            role: "proposer",
+            subject: `Initial Proposal: ${topic}`,
+            body: `Dear Partner,\n\nI would like to propose the following: ${our_position}.\n\nBest regards.`
+          },
+          {
+            role: "responder",
+            subject: `Re: Initial Proposal: ${topic}`,
+            body: `Hello,\n\nWe have reviewed your proposal. However, we were thinking more along the lines of: ${their_position}.\n\nKind regards.`
+          },
+          {
+            role: "proposer",
+            subject: `Counter-offer: ${topic}`,
+            body: `Thank you for your response. We can meet in the middle to finalize the ${topic}.\n\nBest.`
+          }
+        ]
+      };
+    } else {
+      console.log(`Hitting AI Service (Negotiate): ${AI_BASE_URL}/negotiate_email`);
+      const response = await axios.post(`${AI_BASE_URL}/negotiate_email`, {
+        topic,
+        our_position,
+        their_position,
+        category: inputCategory,
+        max_rounds: finalMaxRounds
+      }, {
+        headers: { 'Authorization': `Bearer ${AI_API_KEY}` }
+      });
+      aiResult = response.data;
+    }
+
+    // Save to History
+    try {
+      await History.create({
+        userId: req.user.id,
+        type: 'negotiation',
+        originalText: `Topic: ${topic}\nOur Position: ${our_position}\nTheir Position: ${their_position}`,
+        topic: aiResult.topic || topic,
+        roundsCompleted: aiResult.rounds_completed,
+        agreementReached: aiResult.agreement_reached,
+        summary: aiResult.summary,
+        emailThread: aiResult.email_thread
+      });
+    } catch (historyError) {
+      console.error("History Save Error (Negotiate):", historyError);
+    }
+
+    res.json(aiResult);
+  } catch (error) {
+    console.error('Negotiation Error:', error.message);
+    let errorMessage = 'Internal Server Error';
+    if (error.response?.data) {
+      errorMessage = typeof error.response.data === 'string' ? error.response.data : JSON.stringify(error.response.data);
+    } else if (error.message) {
+      errorMessage = error.message;
     }
     res.status(error.response?.status || 500).json({ error: errorMessage });
   }
