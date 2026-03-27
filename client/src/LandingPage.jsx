@@ -227,7 +227,7 @@ const LandingPage = () => {
                         </p>
                     </motion.div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="flex flex-wrap justify-center gap-8">
                         <FeatureCard
                             index={0}
                             icon={<Zap className="text-indigo-500" size={28} />}
@@ -313,7 +313,7 @@ const FeatureCard = ({ icon, title, description, index }) => (
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ delay: index * 0.1 }}
-        className="p-10 glass rounded-[2rem] shadow-sm hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-500 border-indigo-500/5 group cursor-default"
+        className="p-10 glass rounded-[2rem] shadow-sm hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-500 border-indigo-500/5 group cursor-default w-full md:w-[calc(50%-1rem)] lg:w-[calc(33.33%-1.35rem)]"
     >
         <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-500 text-indigo-600">
             {icon}

@@ -92,8 +92,7 @@ The project implements a **Model-View-Controller (MVC)** inspired architecture o
 ### 4.2 Testing / Verification Plan
 1.  **Unit Testing**: individual testing of controllers (Auth, History) and UI components (Editor, Navbar).
 2.  **Integration Testing**: Validating the connection between the React frontend, the Node.js proxy, and the MongoDB database.
-3.  **Mock Verification**: Using a built-in `MOCK_TEST` system to simulate AI responses during offline development and quality checks.
-4.  **API Validation**: Ensuring the AI service returns correctly structured JSON that the frontend can parse.
+3.  **Real-time API Validation**: Ensuring the AI service returns correctly structured JSON that the frontend can parse under live conditions.
 
 ### 4.3 Result Analysis / Screenshots
 *(Note: For the final report, include screenshots of:)*

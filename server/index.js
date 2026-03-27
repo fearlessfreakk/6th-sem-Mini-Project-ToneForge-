@@ -40,33 +40,15 @@ app.post('/api/convert', protect, async (req, res) => {
       return res.status(400).json({ error: 'Email text is required' });
     }
 
-    let aiResult;
-    // Mock Mode
-    if (inputEmail.toUpperCase().includes('MOCK_TEST')) {
-        aiResult = {
+    console.log(`Hitting AI Service (Formalize): ${AI_BASE_URL}/formalize_email`);
+    const response = await axios.post(`${AI_BASE_URL}/formalize_email`, {
+        raw_email: inputEmail,
         category: inputCategory,
-        email: {
-          subject: "Refined Subject",
-          sender: "Sender Name",
-          to: "Recipient Name",
-          cc: null,
-          body: "This is a formalized email body for testing."
-        }
-      };
-      if (targetLanguage.toLowerCase() !== 'english') {
-        aiResult.translated_email = { ...aiResult.email, language: targetLanguage, body: `(Translated to ${targetLanguage}) ` + aiResult.email.body };
-      }
-    } else {
-        console.log(`Hitting AI Service (Formalize): ${AI_BASE_URL}/formalize_email`);
-        const response = await axios.post(`${AI_BASE_URL}/formalize_email`, {
-            raw_email: inputEmail,
-            category: inputCategory,
-            language: targetLanguage
-          }, {
-            headers: { 'Authorization': `Bearer ${AI_API_KEY}` }
-          });
-          aiResult = response.data;
-    }
+        language: targetLanguage
+      }, {
+        headers: { 'Authorization': `Bearer ${AI_API_KEY}` }
+      });
+      aiResult = response.data;
 
     // Save to History
     try {
@@ -104,26 +86,13 @@ app.post('/api/parse_legal', protect, async (req, res) => {
     const { raw_email } = req.body;
     if (!raw_email) return res.status(400).json({ error: 'Email content is required' });
 
-    let aiResult;
-    // Mock Mode
-    if (raw_email.toUpperCase().includes('MOCK_TEST')) {
-        aiResult = {
-            obligations: ["Do the thing", "Pay the money"],
-            deadlines: ["Tomorrow", "Next week"],
-            clauses: [{ clause_type: "Termination", text: "You can leave whenever.", risk_level: "low" }],
-            risk_flags: ["Vague wording"],
-            overall_risk: "low",
-            plain_summary: "A very friendly contract."
-        };
-    } else {
-        console.log(`Hitting AI Service (Legal): ${AI_BASE_URL}/parse_legal_email`);
-        const response = await axios.post(`${AI_BASE_URL}/parse_legal_email`, {
-            raw_email
-        }, {
-            headers: { 'Authorization': `Bearer ${AI_API_KEY}` }
-        });
-        aiResult = response.data;
-    }
+    console.log(`Hitting AI Service (Legal): ${AI_BASE_URL}/parse_legal_email`);
+    const response = await axios.post(`${AI_BASE_URL}/parse_legal_email`, {
+        raw_email
+    }, {
+        headers: { 'Authorization': `Bearer ${AI_API_KEY}` }
+    });
+    aiResult = response.data;
 
     // Save to History
     try {
@@ -168,45 +137,17 @@ app.post('/api/negotiate', protect, async (req, res) => {
     const finalMaxRounds = Math.min(Math.max(rounds, 1), 6);
     const inputCategory = category || 'business';
 
-    let aiResult;
-    // Mock Mode
-    if (topic.toUpperCase().includes('MOCK_TEST') || our_position.toUpperCase().includes('MOCK_TEST')) {
-      aiResult = {
-        topic: topic,
-        rounds_completed: finalMaxRounds,
-        agreement_reached: true,
-        summary: "The negotiation was successful. Both parties agreed to a mutually beneficial compromise after several rounds of discussion regarding the " + topic + ".",
-        email_thread: [
-          {
-            role: "proposer",
-            subject: `Initial Proposal: ${topic}`,
-            body: `Dear Partner,\n\nI would like to propose the following: ${our_position}.\n\nBest regards.`
-          },
-          {
-            role: "responder",
-            subject: `Re: Initial Proposal: ${topic}`,
-            body: `Hello,\n\nWe have reviewed your proposal. However, we were thinking more along the lines of: ${their_position}.\n\nKind regards.`
-          },
-          {
-            role: "proposer",
-            subject: `Counter-offer: ${topic}`,
-            body: `Thank you for your response. We can meet in the middle to finalize the ${topic}.\n\nBest.`
-          }
-        ]
-      };
-    } else {
-      console.log(`Hitting AI Service (Negotiate): ${AI_BASE_URL}/negotiate_email`);
-      const response = await axios.post(`${AI_BASE_URL}/negotiate_email`, {
-        topic,
-        our_position,
-        their_position,
-        category: inputCategory,
-        max_rounds: finalMaxRounds
-      }, {
-        headers: { 'Authorization': `Bearer ${AI_API_KEY}` }
-      });
-      aiResult = response.data;
-    }
+    console.log(`Hitting AI Service (Negotiate): ${AI_BASE_URL}/negotiate_email`);
+    const response = await axios.post(`${AI_BASE_URL}/negotiate_email`, {
+      topic,
+      our_position,
+      their_position,
+      category: inputCategory,
+      max_rounds: finalMaxRounds
+    }, {
+      headers: { 'Authorization': `Bearer ${AI_API_KEY}` }
+    });
+    aiResult = response.data;
 
     // Save to History
     try {
@@ -237,7 +178,10 @@ app.post('/api/negotiate', protect, async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-    console.log(`Backend server running on http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+        console.log(`Backend server running on http://localhost:${PORT}`);
+    });
+}
 
+module.exports = app;

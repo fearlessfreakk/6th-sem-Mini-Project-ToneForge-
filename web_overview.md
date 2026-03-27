@@ -46,12 +46,7 @@ Unlike traditional applications that call AI models directly from the frontend, 
 - **Data Standardization**: Normalizes various AI model responses into a consistent format for the UI.
 - **Logging & History**: Automatically intercepts successful AI generations to archive them for user history without additional client requests.
 
-### B. Environment-Aware Mock System
-The backend includes a sophisticated **Mocking Architecture**. By detecting specific keywords (e.g., `MOCK_TEST`), the system simulates high-quality AI responses. This allows:
-- **Offline Development**: Work continues even if the AI service is unavailable.
-- **Cost Efficiency**: Reduces API consumption during testing and demonstrations.
-
-### C. Modern UI/UX Implementation (Tailwind v4 & Framer Motion)
+### B. Modern UI/UX Implementation (Tailwind v4 & Framer Motion)
 The frontend utilizes **Framer Motion's LayoutId** for seamless "floating" selections in the tone cards. The UI also implements:
 - **Dynamic Text Refinement**: Smooth AnimatePresence entry for AI results.
 - **Glassmorphism**: A premium aesthetic using backdrop-blurs and sophisticated border-blending to wow the audience.
