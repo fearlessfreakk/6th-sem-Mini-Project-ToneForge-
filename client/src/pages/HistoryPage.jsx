@@ -19,7 +19,7 @@ const HistoryPage = () => {
     useEffect(() => {
         const fetchHistory = async () => {
             try {
-                const response = await axios.get('http://localhost:5000/api/history', {
+                const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/history`, {
                     headers: { Authorization: `Bearer ${user.token}` }
                 });
                 setHistory(response.data);

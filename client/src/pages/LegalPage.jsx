@@ -51,7 +51,7 @@ const LegalPage = () => {
 
         try {
             console.log("Starting analysis for:", rawEmail.substring(0, 50) + "...");
-            const response = await fetch('http://localhost:5000/api/parse_legal', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/parse_legal`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

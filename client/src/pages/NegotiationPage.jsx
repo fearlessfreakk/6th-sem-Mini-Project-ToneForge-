@@ -50,7 +50,7 @@ const NegotiationPage = () => {
         setResult(null);
 
         try {
-            const response = await fetch('http://localhost:5000/api/negotiate', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/negotiate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

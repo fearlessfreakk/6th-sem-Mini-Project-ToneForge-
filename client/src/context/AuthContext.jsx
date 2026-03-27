@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password) => {
         try {
-            const response = await axios.post('http://localhost:5000/api/auth/login', { email, password });
+            const response = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/login`, { email, password });
             const { token, email: userEmail, _id } = response.data;
             localStorage.setItem('token', token);
             const decoded = jwtDecode(token);
@@ -46,7 +46,7 @@ export const AuthProvider = ({ children }) => {
 
     const signup = async (email, password) => {
         try {
-            const response = await axios.post('http://localhost:5000/api/auth/signup', { email, password });
+            const response = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/signup`, { email, password });
             const { token, email: userEmail, _id } = response.data;
             if (token) {
                 localStorage.setItem('token', token);
